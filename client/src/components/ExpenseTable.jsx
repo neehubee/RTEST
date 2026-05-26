@@ -10,6 +10,7 @@ export default function ExpenseTable({ expenses, onDelete, onEdit }) {
   return (
     <div className="card">
       <h2>Expenses</h2>
+
       <table>
         <thead>
           <tr>
@@ -21,17 +22,38 @@ export default function ExpenseTable({ expenses, onDelete, onEdit }) {
             <th>Actions</th>
           </tr>
         </thead>
+
         <tbody>
-          {expenses.map(exp => (
+          {expenses.map((exp) => (
             <tr key={exp.id}>
               <td>{exp.date.slice(0, 10)}</td>
+
               <td>{exp.title}</td>
-              <td>{exp.category}</td>
-              <td>₹{Number(exp.amount).toLocaleString()}</td>
-              <td>{exp.note || '-'}</td>
+
               <td>
-                <button className="edit-btn" onClick={() => onEdit(exp)}>Edit</button>
-                <button className="delete-btn" onClick={() => onDelete(exp.id)}>Delete</button>
+                <span>{exp.category}</span>
+              </td>
+
+              <td>
+                ₹{Number(exp.amount).toLocaleString()}
+              </td>
+
+              <td>{exp.note || '-'}</td>
+
+              <td>
+                <button
+                  className="edit-btn"
+                  onClick={() => onEdit(exp)}
+                >
+                  Edit
+                </button>
+
+                <button
+                  className="delete-btn"
+                  onClick={() => onDelete(exp.id)}
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           ))}
