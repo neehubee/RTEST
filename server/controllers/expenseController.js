@@ -1,17 +1,11 @@
 const pool = require('../db');
 
-// POST /expenses
 const addExpense = async (req, res) => {
   const { title, amount, category, date, note } = req.body;
-
-  if (!title || !amount || amount <= 0 || !date) {
-    return res.status(400).json({ error: 'Title, amount and date are required' });
-  }
-
   try {
     const result = await pool.query(
       'INSERT INTO expenses (title, amount, category, date, note) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [title, amount, category, date, note]
+      [title.trim(), Number(amount), category, date, note || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -20,7 +14,6 @@ const addExpense = async (req, res) => {
   }
 };
 
-// GET /expenses
 const getExpenses = async (req, res) => {
   const { category, from, to, title } = req.query;
   let query = 'SELECT * FROM expenses WHERE 1=1';
@@ -31,15 +24,21 @@ const getExpenses = async (req, res) => {
     query += ` AND category = $${params.length}`;
   }
   if (from) {
+    if (isNaN(Date.parse(from))) {
+      return res.status(400).json({ error: 'Invalid from date' });
+    }
     params.push(from);
     query += ` AND date >= $${params.length}`;
   }
   if (to) {
+    if (isNaN(Date.parse(to))) {
+      return res.status(400).json({ error: 'Invalid to date' });
+    }
     params.push(to);
     query += ` AND date <= $${params.length}`;
   }
   if (title) {
-    params.push(`%${title}%`);
+    params.push(`%${title.trim()}%`);
     query += ` AND title ILIKE $${params.length}`;
   }
 
@@ -54,9 +53,13 @@ const getExpenses = async (req, res) => {
   }
 };
 
-// DELETE /expenses/:id
 const deleteExpense = async (req, res) => {
   const { id } = req.params;
+
+  if (isNaN(Number(id))) {
+    return res.status(400).json({ error: 'Invalid ID' });
+  }
+
   try {
     const result = await pool.query(
       'DELETE FROM expenses WHERE id = $1 RETURNING *',
@@ -72,19 +75,18 @@ const deleteExpense = async (req, res) => {
   }
 };
 
-// PUT /expenses/:id
 const updateExpense = async (req, res) => {
   const { id } = req.params;
   const { title, amount, category, date, note } = req.body;
 
-  if (!title || !amount || amount <= 0 || !date) {
-    return res.status(400).json({ error: 'Title, amount and date are required' });
+  if (isNaN(Number(id))) {
+    return res.status(400).json({ error: 'Invalid ID' });
   }
 
   try {
     const result = await pool.query(
       'UPDATE expenses SET title=$1, amount=$2, category=$3, date=$4, note=$5 WHERE id=$6 RETURNING *',
-      [title, amount, category, date, note, id]
+      [title.trim(), Number(amount), category, date, note || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Expense not found' });
@@ -96,7 +98,6 @@ const updateExpense = async (req, res) => {
   }
 };
 
-// GET /expenses/summary
 const getSummary = async (req, res) => {
   try {
     const total = await pool.query(
@@ -104,7 +105,6 @@ const getSummary = async (req, res) => {
        FROM expenses 
        WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)`
     );
-
     const breakdown = await pool.query(
       `SELECT category, COALESCE(SUM(amount), 0) as total 
        FROM expenses 
@@ -112,7 +112,6 @@ const getSummary = async (req, res) => {
        GROUP BY category
        ORDER BY total DESC`
     );
-
     res.json({
       totalThisMonth: total.rows[0].total,
       categoryBreakdown: breakdown.rows

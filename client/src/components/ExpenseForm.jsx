@@ -1,10 +1,32 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Bills', 'Health', 'Entertainment', 'Other'];
-const empty = { title: '', amount: '', category: 'Food', date: '', note: '' };
+const CATEGORIES = [
+  'Food',
+  'Transport',
+  'Shopping',
+  'Bills',
+  'Health',
+  'Entertainment',
+  'Other'
+];
 
-export default function ExpenseForm({ editingExpense, onSuccess, onCancel, API }) {
+const today = new Date().toISOString().split('T')[0];
+
+const empty = {
+  title: '',
+  amount: '',
+  category: 'Food',
+  date: today,
+  note: ''
+};
+
+export default function ExpenseForm({
+  editingExpense,
+  onSuccess,
+  onCancel,
+  API
+}) {
   const [form, setForm] = useState(empty);
   const [error, setError] = useState('');
 
@@ -23,16 +45,27 @@ export default function ExpenseForm({ editingExpense, onSuccess, onCancel, API }
   }, [editingExpense]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!form.title.trim()) return setError('Title is required');
-    if (!form.amount || form.amount <= 0) return setError('Amount must be greater than 0');
-    if (!form.date) return setError('Date is required');
+    if (!form.title.trim()) {
+      return setError('Title is required');
+    }
+
+    if (!form.amount || form.amount <= 0) {
+      return setError('Amount must be greater than 0');
+    }
+
+    if (!form.date) {
+      return setError('Date is required');
+    }
 
     try {
       if (editingExpense) {
@@ -40,6 +73,7 @@ export default function ExpenseForm({ editingExpense, onSuccess, onCancel, API }
       } else {
         await axios.post(`${API}/expenses`, form);
       }
+
       setForm(empty);
       onSuccess();
     } catch (err) {
@@ -50,7 +84,9 @@ export default function ExpenseForm({ editingExpense, onSuccess, onCancel, API }
   return (
     <div className="card">
       <h2>{editingExpense ? 'Edit Expense' : 'Add Expense'}</h2>
+
       {error && <p className="error">{error}</p>}
+
       <form onSubmit={handleSubmit}>
         <div className="form-row">
           <input
@@ -59,6 +95,7 @@ export default function ExpenseForm({ editingExpense, onSuccess, onCancel, API }
             value={form.title}
             onChange={handleChange}
           />
+
           <input
             name="amount"
             type="number"
@@ -66,9 +103,17 @@ export default function ExpenseForm({ editingExpense, onSuccess, onCancel, API }
             value={form.amount}
             onChange={handleChange}
           />
-          <select name="category" value={form.category} onChange={handleChange}>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+
+          <select
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
           </select>
+
           <input
             name="date"
             type="date"
@@ -76,16 +121,27 @@ export default function ExpenseForm({ editingExpense, onSuccess, onCancel, API }
             onChange={handleChange}
           />
         </div>
+
         <textarea
           name="note"
           placeholder="Note (optional)"
           value={form.note}
           onChange={handleChange}
         />
+
         <div className="form-actions">
-          <button type="submit">{editingExpense ? 'Update' : 'Add Expense'}</button>
+          <button type="submit">
+            {editingExpense ? 'Update' : 'Add Expense'}
+          </button>
+
           {editingExpense && (
-            <button type="button" className="cancel" onClick={onCancel}>Cancel</button>
+            <button
+              type="button"
+              className="cancel"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
           )}
         </div>
       </form>
